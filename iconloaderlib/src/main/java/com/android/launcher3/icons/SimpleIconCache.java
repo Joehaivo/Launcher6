@@ -15,6 +15,9 @@
  */
 package com.android.launcher3.icons;
 
+import static android.content.Intent.ACTION_MANAGED_PROFILE_ADDED;
+import static android.content.Intent.ACTION_MANAGED_PROFILE_REMOVED;
+
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -25,15 +28,13 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.util.SparseLongArray;
 
 import com.android.iconloaderlib.R;
 import com.android.launcher3.icons.cache.BaseIconCache;
-
-import static android.content.Intent.ACTION_MANAGED_PROFILE_ADDED;
-import static android.content.Intent.ACTION_MANAGED_PROFILE_REMOVED;
 
 /**
  * Wrapper class to provide access to {@link BaseIconFactory} and also to provide pool of this class
@@ -67,13 +68,12 @@ public class SimpleIconCache extends BaseIconCache {
     @Override
     protected long getSerialNumberForUser(UserHandle user) {
         synchronized (mUserSerialMap) {
-//            int index = mUserSerialMap.indexOfKey(user.getIdentifier());
-            int index = 0;
+            int index = mUserSerialMap.indexOfKey(Process.myUid());
             if (index >= 0) {
                 return mUserSerialMap.valueAt(index);
             }
             long serial = mUserManager.getSerialNumberForUser(user);
-            mUserSerialMap.put(index, serial);
+            mUserSerialMap.put(Process.myUid(), serial);
             return serial;
         }
     }
@@ -86,12 +86,11 @@ public class SimpleIconCache extends BaseIconCache {
 
     @Override
     protected boolean isInstantApp(ApplicationInfo info) {
-//        return info.isInstantApp();
         return false;
     }
 
     @Override
-    protected BaseIconFactory getIconFactory() {
+    public BaseIconFactory getIconFactory() {
         return IconFactory.obtain(mContext);
     }
 

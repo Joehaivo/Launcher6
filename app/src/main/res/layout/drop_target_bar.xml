@@ -19,6 +19,7 @@
     android:layout_gravity="center_horizontal|top"
     android:focusable="false"
     android:alpha="0"
+    android:theme="@style/HomeScreenElementTheme"
     android:visibility="invisible">
 
     <!-- Delete target -->

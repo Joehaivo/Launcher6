@@ -15,26 +15,19 @@
  */
 package com.android.launcher3.model;
 
-import android.content.ComponentName;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.os.Process;
 
-import com.android.launcher3.AllAppsList;
-import com.android.launcher3.AppInfo;
-import com.android.launcher3.ItemInfo;
 import com.android.launcher3.LauncherAppState;
-import com.android.launcher3.LauncherAppWidgetInfo;
-import com.android.launcher3.LauncherModel.CallbackTask;
-import com.android.launcher3.LauncherModel.Callbacks;
-import com.android.launcher3.PromiseAppInfo;
-import com.android.launcher3.WorkspaceItemInfo;
-import com.android.launcher3.compat.PackageInstallerCompat;
-import com.android.launcher3.compat.PackageInstallerCompat.PackageInstallInfo;
+import com.android.launcher3.model.data.AppInfo;
+import com.android.launcher3.model.data.ItemInfo;
+import com.android.launcher3.model.data.ItemInfoWithIcon;
+import com.android.launcher3.model.data.LauncherAppWidgetInfo;
+import com.android.launcher3.pm.PackageInstallInfo;
 import com.android.launcher3.util.InstantAppResolver;
 
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 /**
  * Handles changes due to a sessions updates for a currently installing app.
@@ -49,14 +42,14 @@ public class PackageInstallStateChangedTask extends BaseModelUpdateTask {
 
     @Override
     public void execute(LauncherAppState app, BgDataModel dataModel, AllAppsList apps) {
-        if (mInstallInfo.state == PackageInstallerCompat.STATUS_INSTALLED) {
+        if (mInstallInfo.state == PackageInstallInfo.STATUS_INSTALLED) {
             try {
                 // For instant apps we do not get package-add. Use setting events to update
                 // any pinned icons.
                 ApplicationInfo ai = app.getContext()
                         .getPackageManager().getApplicationInfo(mInstallInfo.packageName, 0);
                 if (InstantAppResolver.newInstance(app.getContext()).isInstantApp(ai)) {
-                    app.getModel().onPackageAdded(ai.packageName, Process.myUserHandle());
+                    app.getModel().onPackageAdded(ai.packageName, mInstallInfo.user);
                 }
             } catch (PackageManager.NameNotFoundException e) {
                 // Ignore
@@ -66,60 +59,30 @@ public class PackageInstallStateChangedTask extends BaseModelUpdateTask {
         }
 
         synchronized (apps) {
-            PromiseAppInfo updated = null;
-            final ArrayList<AppInfo> removed = new ArrayList<>();
-            for (int i=0; i < apps.size(); i++) {
-                final AppInfo appInfo = apps.get(i);
-                final ComponentName tgtComp = appInfo.getTargetComponent();
-                if (tgtComp != null && tgtComp.getPackageName().equals(mInstallInfo.packageName)) {
-                    if (appInfo instanceof PromiseAppInfo) {
-                        final PromiseAppInfo promiseAppInfo = (PromiseAppInfo) appInfo;
-                        if (mInstallInfo.state == PackageInstallerCompat.STATUS_INSTALLING) {
-                            promiseAppInfo.level = mInstallInfo.progress;
-                            updated = promiseAppInfo;
-                        } else if (mInstallInfo.state == PackageInstallerCompat.STATUS_FAILED) {
-                            apps.removePromiseApp(appInfo);
-                            removed.add(appInfo);
-                        }
-                    }
+            List<AppInfo> updatedAppInfos = apps.updatePromiseInstallInfo(mInstallInfo);
+            if (!updatedAppInfos.isEmpty()) {
+                for (AppInfo appInfo : updatedAppInfos) {
+                    scheduleCallbackTask(c -> c.bindIncrementalDownloadProgressUpdated(appInfo));
                 }
             }
-            if (updated != null) {
-                final PromiseAppInfo updatedPromiseApp = updated;
-                scheduleCallbackTask(new CallbackTask() {
-                    @Override
-                    public void execute(Callbacks callbacks) {
-                        callbacks.bindPromiseAppProgressUpdated(updatedPromiseApp);
-                    }
-                });
-            }
-            if (!removed.isEmpty()) {
-                scheduleCallbackTask(new CallbackTask() {
-                    @Override
-                    public void execute(Callbacks callbacks) {
-                        callbacks.bindAppInfosRemoved(removed);
-                    }
-                });
-            }
+            bindApplicationsIfNeeded();
         }
 
         synchronized (dataModel) {
             final HashSet<ItemInfo> updates = new HashSet<>();
-            for (ItemInfo info : dataModel.itemsIdMap) {
-                if (info instanceof WorkspaceItemInfo) {
-                    WorkspaceItemInfo si = (WorkspaceItemInfo) info;
-                    ComponentName cn = si.getTargetComponent();
-                    if (si.hasPromiseIconUi() && (cn != null)
-                            && mInstallInfo.packageName.equals(cn.getPackageName())) {
-                        si.setInstallProgress(mInstallInfo.progress);
-                        if (mInstallInfo.state == PackageInstallerCompat.STATUS_FAILED) {
-                            // Mark this info as broken.
-                            si.status &= ~WorkspaceItemInfo.FLAG_INSTALL_SESSION_ACTIVE;
-                        }
-                        updates.add(si);
+            dataModel.forAllWorkspaceItemInfos(mInstallInfo.user, si -> {
+                if (si.hasPromiseIconUi()
+                        && mInstallInfo.packageName.equals(si.getTargetPackage())) {
+                    int installProgress = mInstallInfo.progress;
+
+                    si.setProgressLevel(installProgress, PackageInstallInfo.STATUS_INSTALLING);
+                    if (mInstallInfo.state == PackageInstallInfo.STATUS_FAILED) {
+                        // Mark this info as broken.
+                        si.runtimeStatusFlags &= ~ItemInfoWithIcon.FLAG_INSTALL_SESSION_ACTIVE;
                     }
+                    updates.add(si);
                 }
-            }
+            });
 
             for (LauncherAppWidgetInfo widget : dataModel.appWidgets) {
                 if (widget.providerName.getPackageName().equals(mInstallInfo.packageName)) {
@@ -129,12 +92,7 @@ public class PackageInstallStateChangedTask extends BaseModelUpdateTask {
             }
 
             if (!updates.isEmpty()) {
-                scheduleCallbackTask(new CallbackTask() {
-                    @Override
-                    public void execute(Callbacks callbacks) {
-                        callbacks.bindRestoreItemsChange(updates);
-                    }
-                });
+                scheduleCallbackTask(callbacks -> callbacks.bindRestoreItemsChange(updates));
             }
         }
     }

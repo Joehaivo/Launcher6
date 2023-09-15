@@ -9,8 +9,6 @@ import android.view.ViewDebug;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.android.launcher3.R;
-
 public class InsettableFrameLayout extends FrameLayout implements Insettable {
 
     @ViewDebug.ExportedProperty(category = "launcher")
@@ -93,6 +91,9 @@ public class InsettableFrameLayout extends FrameLayout implements Insettable {
     @Override
     public void onViewAdded(View child) {
         super.onViewAdded(child);
+        if (!isAttachedToWindow()) {
+            return;
+        }
         setFrameLayoutChildInsets(child, mInsets, new Rect());
     }
 

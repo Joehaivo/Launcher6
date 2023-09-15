@@ -1,5 +1,7 @@
 package com.android.launcher3.util;
 
+import static com.android.launcher3.util.Executors.UI_HELPER_EXECUTOR;
+
 import android.app.WallpaperManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -143,14 +145,17 @@ public class WallpaperOffsetInterpolator extends BroadcastReceiver {
         msg.sendToTarget();
     }
 
-    private void updateOffset() {
-        int numPagesForWallpaperParallax;
+    /** Returns the number of pages used for the wallpaper parallax. */
+    public int getNumPagesForWallpaperParallax() {
         if (mWallpaperIsLiveWallpaper) {
-            numPagesForWallpaperParallax = mNumScreens;
+            return mNumScreens;
         } else {
-            numPagesForWallpaperParallax = Math.max(MIN_PARALLAX_PAGE_SPAN, mNumScreens);
+            return Math.max(MIN_PARALLAX_PAGE_SPAN, mNumScreens);
         }
-        Message.obtain(mHandler, MSG_SET_NUM_PARALLAX, numPagesForWallpaperParallax, 0,
+    }
+
+    private void updateOffset() {
+        Message.obtain(mHandler, MSG_SET_NUM_PARALLAX, getNumPagesForWallpaperParallax(), 0,
                 mWindowToken).sendToTarget();
     }
 
@@ -198,7 +203,7 @@ public class WallpaperOffsetInterpolator extends BroadcastReceiver {
         private float mOffsetX;
 
         public OffsetHandler(Context context) {
-            super(UiThreadHelper.getBackgroundLooper());
+            super(UI_HELPER_EXECUTOR.getLooper());
             mInterpolator = Interpolators.DEACCEL_1_5;
             mWM = WallpaperManager.getInstance(context);
         }

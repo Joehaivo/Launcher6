@@ -17,21 +17,25 @@ package com.android.launcher3.model;
 
 import android.util.Log;
 
-import com.android.launcher3.AllAppsList;
 import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.LauncherModel;
-import com.android.launcher3.LauncherModel.ModelUpdateTask;
 import com.android.launcher3.LauncherModel.CallbackTask;
-import com.android.launcher3.LauncherModel.Callbacks;
-import com.android.launcher3.WorkspaceItemInfo;
-import com.android.launcher3.config.FeatureFlags;
+import com.android.launcher3.LauncherModel.ModelUpdateTask;
+import com.android.launcher3.model.BgDataModel.Callbacks;
+import com.android.launcher3.model.BgDataModel.FixedContainerItems;
+import com.android.launcher3.model.data.AppInfo;
+import com.android.launcher3.model.data.ItemInfo;
+import com.android.launcher3.model.data.WorkspaceItemInfo;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.ItemInfoMatcher;
-import com.android.launcher3.widget.WidgetListRowEntry;
+import com.android.launcher3.widget.model.WidgetsListBaseEntry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 /**
  * Extension of {@link ModelUpdateTask} with some utility methods
@@ -63,10 +67,7 @@ public abstract class BaseModelUpdateTask implements ModelUpdateTask {
                 Log.d(TAG, "Ignoring model task since loader is pending=" + this);
             }
             // Loader has not yet run.
-            // wangjing add for dynamic switch launcher layout
-            if (!FeatureFlags.LAUNCHER3_REMOVE_DRAWER) {
-                return;
-            }
+            return;
         }
         execute(mApp, mDataModel, mAllAppsList);
     }
@@ -81,13 +82,9 @@ public abstract class BaseModelUpdateTask implements ModelUpdateTask {
      * Schedules a {@param task} to be executed on the current callbacks.
      */
     public final void scheduleCallbackTask(final CallbackTask task) {
-        final Callbacks callbacks = mModel.getCallback();
-        mUiExecutor.execute(() -> {
-            Callbacks cb = mModel.getCallback();
-            if (callbacks == cb && cb != null) {
-                task.execute(callbacks);
-            }
-        });
+        for (final Callbacks cb : mModel.getCallbacks()) {
+            mUiExecutor.execute(() -> task.execute(cb));
+        }
     }
 
     public ModelWriter getModelWriter() {
@@ -96,16 +93,27 @@ public abstract class BaseModelUpdateTask implements ModelUpdateTask {
         return mModel.getWriter(false /* hasVerticalHotseat */, false /* verifyChanges */);
     }
 
-
-    public void bindUpdatedWorkspaceItems(final ArrayList<WorkspaceItemInfo> updatedShortcuts) {
-        if (!updatedShortcuts.isEmpty()) {
-            scheduleCallbackTask(new CallbackTask() {
-                @Override
-                public void execute(Callbacks callbacks) {
-                    callbacks.bindWorkspaceItemsChanged(updatedShortcuts);
-                }
-            });
+    public void bindUpdatedWorkspaceItems(List<WorkspaceItemInfo> allUpdates) {
+        // Bind workspace items
+        List<WorkspaceItemInfo> workspaceUpdates = allUpdates.stream()
+                .filter(info -> info.id != ItemInfo.NO_ID)
+                .collect(Collectors.toList());
+        if (!workspaceUpdates.isEmpty()) {
+            scheduleCallbackTask(c -> c.bindWorkspaceItemsChanged(workspaceUpdates));
         }
+
+        // Bind extra items if any
+        allUpdates.stream()
+                .mapToInt(info -> info.container)
+                .distinct()
+                .mapToObj(mDataModel.extraItems::get)
+                .filter(Objects::nonNull)
+                .forEach(this::bindExtraContainerItems);
+    }
+
+    public void bindExtraContainerItems(FixedContainerItems item) {
+        FixedContainerItems copy = item.clone();
+        scheduleCallbackTask(c -> c.bindExtraContainerItems(copy));
     }
 
     public void bindDeepShortcuts(BgDataModel dataModel) {
@@ -115,25 +123,23 @@ public abstract class BaseModelUpdateTask implements ModelUpdateTask {
     }
 
     public void bindUpdatedWidgets(BgDataModel dataModel) {
-        final ArrayList<WidgetListRowEntry> widgets =
-                dataModel.widgetsModel.getWidgetsList(mApp.getContext());
-        scheduleCallbackTask(new CallbackTask() {
-            @Override
-            public void execute(Callbacks callbacks) {
-                callbacks.bindAllWidgets(widgets);
-            }
-        });
+        final ArrayList<WidgetsListBaseEntry> widgets =
+                dataModel.widgetsModel.getWidgetsListForPicker(mApp.getContext());
+        scheduleCallbackTask(c -> c.bindAllWidgets(widgets));
     }
 
     public void deleteAndBindComponentsRemoved(final ItemInfoMatcher matcher) {
         getModelWriter().deleteItemsFromDatabase(matcher);
 
         // Call the components-removed callback
-        scheduleCallbackTask(new CallbackTask() {
-            @Override
-            public void execute(Callbacks callbacks) {
-                callbacks.bindWorkspaceComponentsRemoved(matcher);
-            }
-        });
+        scheduleCallbackTask(c -> c.bindWorkspaceComponentsRemoved(matcher));
+    }
+
+    public void bindApplicationsIfNeeded() {
+        if (mAllAppsList.getAndResetChangeFlag()) {
+            AppInfo[] apps = mAllAppsList.copyData();
+            int flags = mAllAppsList.getFlags();
+            scheduleCallbackTask(c -> c.bindAllApplications(apps, flags));
+        }
     }
 }

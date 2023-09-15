@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace 'com.android.launcher3'
-    compileSdkVersion 29
+    compileSdkVersion 31
 
     defaultConfig {
         applicationId "com.android.launcher6"
         minSdkVersion 26
-        targetSdkVersion 29
+        targetSdkVersion 31
         versionCode 10000
         versionName "1.0.0"
 
@@ -66,21 +66,20 @@ dependencies {
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.0'
     implementation 'androidx.preference:preference:1.1.1'
+    implementation "androidx.slice:slice-builders:1.0.0"
+    implementation "com.google.protobuf:protobuf-javalite:3.8.0"
 }
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.0.0-alpha-3'
-        generateProtoTasks {
-            all().each { task ->
-                task.builtins {
-                    remove java
-                    javanano {
-                        option "java_package=launcher_log_extension.proto|com.android.launcher3.userevent.nano"
-                        option "java_package=launcher_log.proto|com.android.launcher3.userevent.nano"
-                        option "java_package=launcher_dump.proto|com.android.launcher3.model.nano"
-                        option "enum_style=java"
-                    }
+        artifact = "com.google.protobuf:protoc:${protocVersion}"
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                remove java
+                java {
+                    option "lite"
                 }
             }
         }

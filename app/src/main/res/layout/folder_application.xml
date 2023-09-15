@@ -20,4 +20,6 @@
     style="@style/BaseIcon"
     android:textColor="?attr/folderTextColor"
     android:includeFontPadding="false"
-    launcher:iconDisplay="folder" />
+    android:hapticFeedbackEnabled="false"
+    launcher:iconDisplay="folder"
+    launcher:centerVertically="true" />

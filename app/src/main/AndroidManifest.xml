@@ -46,7 +46,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
+    <uses-permission android:name="android.permission.READ_DEVICE_CONFIG" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <!-- for rotating surface by arbitrary degree -->
+    <uses-permission android:name="android.permission.ROTATE_SURFACE_FLINGER" />
     <!--
     Permissions required for read/write access to the workspace data. These permission name
     should not conflict with that defined in other apps, as such an app should embed its package
@@ -73,7 +76,7 @@
         android:fullBackupOnly="true"
         android:fullBackupContent="@xml/backupscheme"
         android:hardwareAccelerated="true"
-        android:icon="@drawable/ic_launcher_home"
+        android:icon="@mipmap/ic_launcher_home_foreground"
         android:label="@string/derived_app_name"
         android:restoreAnyVersion="true"
         android:supportsRtl="true"
@@ -86,10 +89,11 @@
             android:stateNotNeeded="true"
             android:windowSoftInputMode="adjustPan"
             android:screenOrientation="unspecified"
-            android:configChanges="keyboard|keyboardHidden|mcc|mnc|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:configChanges="keyboard|keyboardHidden|mcc|mnc|navigation|orientation|screenSize|screenLayout|smallestScreenSize|density"
             android:resizeableActivity="true"
             android:resumeWhilePausing="true"
             android:taskAffinity=""
+            android:exported="true"
             android:enabled="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -107,7 +111,7 @@
         <receiver
             android:name="com.android.launcher3.InstallShortcutReceiver"
             android:permission="com.android.launcher.permission.INSTALL_SHORTCUT"
-            android:enabled="@bool/enable_install_shortcut_api"
+            android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.android.launcher.action.INSTALL_SHORTCUT" />
@@ -140,7 +144,6 @@
         <service
             android:name="com.android.launcher3.notification.NotificationListener"
             android:label="@string/notification_dots_service_title"
-            android:enabled="@bool/notification_dots_enabled"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>
@@ -152,7 +155,7 @@
                        android:value="true" />
 
         <activity android:name="com.android.launcher3.dragndrop.AddItemActivity"
-            android:theme="@style/AppItemActivityTheme"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
             android:autoRemoveFromRecents="true"
             android:label="@string/action_add_to_workspace"
@@ -188,7 +191,7 @@
         TODO: Add proper permissions
         -->
         <provider
-            android:name="com.android.launcher3.graphics.GridOptionsProvider"
+            android:name="com.android.launcher3.graphics.GridCustomizationsProvider"
             android:authorities="${applicationId}.grid_control"
             android:enabled="false"
             android:exported="true" />
@@ -215,5 +218,21 @@
             android:writePermission="android.permission.WRITE_SECURE_SETTINGS"
             android:exported="true"
             android:enabled="false" />
+
+        <!--
+        Launcher activity for secondary display
+        -->
+        <activity
+            android:name="com.android.launcher3.secondarydisplay.SecondaryDisplayLauncher"
+            android:theme="@style/AppTheme"
+            android:launchMode="singleTop"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.SECONDARY_HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>
