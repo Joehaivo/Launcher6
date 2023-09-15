@@ -44,6 +44,9 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    lint {
+        baseline = file("lint-baseline.xml")
+    }
     android.applicationVariants.configureEach { variant ->
         variant.outputs.configureEach {
             outputFileName = "Launcher6-${variant.versionName}(${variant.versionCode})-${variant.buildType.name}.apk"
