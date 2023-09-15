@@ -16,51 +16,49 @@
 
 <favorites xmlns:launcher="http://schemas.android.com/apk/res-auto/com.android.launcher3">
 
+    <folder launcher:screen="0" launcher:x="0" launcher:y="0" launcher:title="@string/preset_folder_name">
+        <favorite
+            launcher:className="com.android.calendar.AllInOneActivity"
+            launcher:packageName="com.android.calendar" />
+        <favorite
+            launcher:className="com.android.camera.CameraLauncher"
+            launcher:packageName="com.android.camera2" />
+        <favorite
+            launcher:className="com.android.gallery3d.app.GalleryActivity"
+            launcher:packageName="com.android.gallery3d" />
+        <favorite
+            launcher:className="com.android.quicksearchbox.SearchActivity"
+            launcher:packageName="com.android.quicksearchbox" />
+        <favorite
+            launcher:className="com.android.documentsui.LauncherActivity"
+            launcher:packageName="com.android.documentsui" />
+    </folder>
+
     <!-- Hotseat (We use the screen as the position of the item in the hotseat) -->
     <!-- Dialer, Messaging, Browser, Camera -->
+
     <resolve
         launcher:container="-101"
         launcher:screen="0"
         launcher:x="0"
         launcher:y="0" >
-        <favorite launcher:uri="#Intent;action=android.intent.action.DIAL;end" />
-        <favorite launcher:uri="tel:123" />
-        <favorite launcher:uri="#Intent;action=android.intent.action.CALL_BUTTON;end" />
+        <favorite
+            launcher:className="com.android.settings.Settings"
+            launcher:packageName="com.android.settings" />
     </resolve>
 
     <resolve
         launcher:container="-101"
         launcher:screen="1"
-        launcher:x="1"
-        launcher:y="0" >
-        <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_MESSAGING;end" />
-        <favorite launcher:uri="sms:" />
-        <favorite launcher:uri="smsto:" />
-        <favorite launcher:uri="mms:" />
-        <favorite launcher:uri="mmsto:" />
-    </resolve>
-
-    <resolve
-        launcher:container="-101"
-        launcher:screen="2"
-        launcher:x="2"
+        launcher:x="0"
         launcher:y="0" >
         <favorite
-            launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_BROWSER;end" />
-        <favorite launcher:uri="http://www.example.com/" />
-    </resolve>
-
-    <resolve
-        launcher:container="-101"
-        launcher:screen="3"
-        launcher:x="3"
-        launcher:y="0" >
-        <favorite launcher:uri="#Intent;action=android.media.action.STILL_IMAGE_CAMERA;end" />
-        <favorite launcher:uri="#Intent;action=android.intent.action.CAMERA_BUTTON;end" />
+            launcher:className="com.vmos.appmarket.ui.home.MainActivity"
+            launcher:packageName="com.cutecalculator.heart.clouds" />
     </resolve>
 
     <!-- Bottom row -->
-    <resolve
+    <!--<resolve
         launcher:screen="0"
         launcher:x="0"
         launcher:y="-1" >
@@ -82,6 +80,6 @@
         launcher:y="-1" >
         <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_MARKET;end" />
         <favorite launcher:uri="market://details?id=com.android.launcher" />
-    </resolve>
+    </resolve>-->
 
 </favorites>

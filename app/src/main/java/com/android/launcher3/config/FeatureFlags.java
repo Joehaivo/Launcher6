@@ -48,11 +48,13 @@ public final class FeatureFlags {
      */
     public static final boolean IS_STUDIO_BUILD = BuildConfig.DEBUG;
 
+    public static final boolean LAUNCHER3_REMOVE_DRAWER = "false".equals(Utilities.getSystemProperty("persist.sys.bd.launcher_remove_drawer", "false"));
+
     /**
      * Enable moving the QSB on the 0th screen of the workspace. This is not a configuration feature
      * and should be modified at a project level.
      */
-    public static final boolean QSB_ON_FIRST_SCREEN = true;
+    public static final boolean QSB_ON_FIRST_SCREEN = !LAUNCHER3_REMOVE_DRAWER;
 
     /**
      * Feature flag to handle define config changes dynamically instead of killing the process.
@@ -65,7 +67,7 @@ public final class FeatureFlags {
      */
     // When enabled the promise icon is visible in all apps while installation an app.
     public static final BooleanFlag PROMISE_APPS_IN_ALL_APPS = getDebugFlag(
-            "PROMISE_APPS_IN_ALL_APPS", false, "Add promise icon in all-apps");
+            "PROMISE_APPS_IN_ALL_APPS", true, "Add promise icon in all-apps");
 
     // When enabled a promise icon is added to the home screen when install session is active.
     public static final BooleanFlag PROMISE_APPS_NEW_INSTALLS = getDebugFlag(

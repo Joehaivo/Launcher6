@@ -29,8 +29,11 @@ import android.view.View;
 
 import androidx.annotation.Nullable;
 
+import com.android.launcher3.DeleteDropTarget;
 import com.android.launcher3.DragSource;
 import com.android.launcher3.DropTarget;
+import com.android.launcher3.LauncherSettings;
+import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.logging.InstanceId;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.model.data.WorkspaceItemInfo;
@@ -525,10 +528,19 @@ public abstract class DragController<T extends ActivityContext>
                     dropTarget.onDrop(mDragObject, mOptions);
                 }
                 accepted = true;
+                if (FeatureFlags.LAUNCHER3_REMOVE_DRAWER && dropTarget instanceof DeleteDropTarget
+                        && isNeedCancelDrag(mDragObject.dragInfo)) {
+                    cancelDrag();
+                }
             }
         }
         final View dropTargetAsView = dropTarget instanceof View ? (View) dropTarget : null;
         dispatchDropComplete(dropTargetAsView, accepted);
+    }
+
+    private boolean isNeedCancelDrag(ItemInfo item) {
+        return (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION ||
+                item.itemType == LauncherSettings.Favorites.ITEM_TYPE_FOLDER);
     }
 
     private DropTarget findDropTarget(int x, int y, int[] dropCoordinates) {

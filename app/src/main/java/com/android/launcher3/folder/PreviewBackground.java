@@ -152,7 +152,7 @@ public class PreviewBackground extends CellLayout.DelegatedCellDrawing {
         mInvalidateDelegate = invalidateDelegate;
 
         TypedArray ta = context.getTheme().obtainStyledAttributes(R.styleable.FolderIconPreview);
-        mDotColor = ta.getColor(R.styleable.FolderIconPreview_folderDotColor, 0);
+        mDotColor = 0x303030;
         mStrokeColor = ta.getColor(R.styleable.FolderIconPreview_folderIconBorderColor, 0);
         mBgColor = ta.getColor(R.styleable.FolderIconPreview_folderFillColor, 0);
         ta.recycle();

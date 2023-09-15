@@ -507,6 +507,16 @@ public final class Utilities {
         return defaultValue;
     }
 
+    public static void setSystemProperty(String property, String value) {
+        try {
+            Class clazz = Class.forName("android.os.SystemProperties");
+            Method setter = clazz.getDeclaredMethod("set", String.class, String.class);
+            setter.invoke(null, property, value);
+        } catch (Exception e) {
+            Log.d(TAG, "Unable to read system properties");
+        }
+    }
+
     /**
      * Ensures that a value is within given bounds. Specifically:
      * If value is less than lowerBound, return lowerBound; else if value is greater than upperBound,

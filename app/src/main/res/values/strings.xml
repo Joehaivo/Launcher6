@@ -420,4 +420,7 @@
 
     <!-- Failed action error message: e.g. Failed: Pause -->
     <string name="remote_action_failed">Failed: <xliff:g id="what" example="Pause">%1$s</xliff:g></string>
+    <string name="enable_flat_mode">Layout icons to workspace</string>
+    <string name="switch_launcher_ui">Switch Launcher layout</string>
+    <string name="preset_folder_name">System Tools</string>
 </resources>

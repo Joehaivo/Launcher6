@@ -20,7 +20,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
@@ -43,6 +43,9 @@ android {
     }
     buildFeatures {
         buildConfig = true
+    }
+    lint {
+        baseline = file("lint-baseline.xml")
     }
     android.applicationVariants.configureEach { variant ->
         variant.outputs.configureEach {

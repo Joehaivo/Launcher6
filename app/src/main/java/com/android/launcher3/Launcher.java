@@ -77,9 +77,11 @@ import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.database.ContentObserver;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
@@ -87,6 +89,7 @@ import android.os.Parcelable;
 import android.os.Process;
 import android.os.StrictMode;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.text.method.TextKeyListener;
 import android.util.Log;
@@ -153,6 +156,7 @@ import com.android.launcher3.popup.PopupContainerWithArrow;
 import com.android.launcher3.popup.PopupDataProvider;
 import com.android.launcher3.popup.SystemShortcut;
 import com.android.launcher3.qsb.QsbContainerView;
+import com.android.launcher3.settings.OverrideApplyHandler;
 import com.android.launcher3.statemanager.StateManager;
 import com.android.launcher3.statemanager.StateManager.StateHandler;
 import com.android.launcher3.statemanager.StatefulActivity;
@@ -167,6 +171,7 @@ import com.android.launcher3.util.ActivityTracker;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.IntArray;
 import com.android.launcher3.util.ItemInfoMatcher;
+import com.android.launcher3.util.LooperExecutor;
 import com.android.launcher3.util.MultiValueAlpha;
 import com.android.launcher3.util.MultiValueAlpha.AlphaProperty;
 import com.android.launcher3.util.OnboardingPrefs;
@@ -501,7 +506,31 @@ public class Launcher extends StatefulActivity<LauncherState> implements Launche
         if (Utilities.ATLEAST_R) {
             getWindow().setSoftInputMode(LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         }
+        Log.d(TAG, "register ContentObserver");
+        getContentResolver().registerContentObserver(
+                Settings.System.getUriFor(LauncherSettings.Settings.LAUNCHER3_REMOVE_DRAWER),
+                true,
+                mContentObserver);
     }
+
+    private final ContentObserver mContentObserver = new ContentObserver(mHandler) {
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            super.onChange(selfChange, uri);
+            Log.d(TAG, "onChange: uri = " + uri + ", selfChange = " + selfChange);
+            if (uri != null) {
+                if (uri.equals(Settings.System.getUriFor(LauncherSettings.Settings.LAUNCHER3_REMOVE_DRAWER))) {
+                    boolean removeDrawer = Settings.System.getInt(getContentResolver(),
+                            LauncherSettings.Settings.LAUNCHER3_REMOVE_DRAWER, 0) == 1;
+                    Utilities.setSystemProperty("persist.sys.bd.launcher_remove_drawer", removeDrawer ? "true": "false");
+
+                    new LooperExecutor(LauncherModel.getWorkerLooper()).execute(
+                            new OverrideApplyHandler(Launcher.this, removeDrawer)
+                    );
+                }
+            }
+        }
+    };
 
     protected LauncherOverlayManager getDefaultOverlay() {
         return new LauncherOverlayManager() { };
@@ -1647,6 +1676,10 @@ public class Launcher extends StatefulActivity<LauncherState> implements Launche
 
         mOverlayManager.onActivityDestroyed(this);
         mUserChangedCallbackCloseable.close();
+        Log.d(TAG, "unregister contentObserver");
+        if (mContentObserver != null) {
+            getContentResolver().unregisterContentObserver(mContentObserver);
+        }
     }
 
     public LauncherAccessibilityDelegate getAccessibilityDelegate() {

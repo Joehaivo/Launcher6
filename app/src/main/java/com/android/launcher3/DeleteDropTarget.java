@@ -26,6 +26,7 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import com.android.launcher3.accessibility.LauncherAccessibilityDelegate;
+import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.dragndrop.DragOptions;
 import com.android.launcher3.logging.StatsLogManager;
 import com.android.launcher3.model.ModelWriter;
@@ -36,6 +37,8 @@ import com.android.launcher3.model.data.WorkspaceItemInfo;
 import com.android.launcher3.views.Snackbar;
 
 public class DeleteDropTarget extends ButtonDropTarget {
+
+    private int mControlType = ControlType.DEFAULT_CONTROLTYPE;
 
     private final StatsLogManager mStatsLogManager;
 
@@ -98,6 +101,11 @@ public class DeleteDropTarget extends ButtonDropTarget {
             setContentDescription(mText);
             requestLayout();
         }
+        if (FeatureFlags.LAUNCHER3_REMOVE_DRAWER) {
+            mText = getResources().getString(canDrop(item)
+                    ? R.string.remove_drop_target_label
+                    : android.R.string.cancel);
+        }
     }
 
     private boolean canRemove(ItemInfo item) {
@@ -108,8 +116,12 @@ public class DeleteDropTarget extends ButtonDropTarget {
      * Set mControlType depending on the drag item.
      */
     private void setControlTypeBasedOnDragSource(ItemInfo item) {
-        mLauncherEvent = item.id != ItemInfo.NO_ID ? LAUNCHER_ITEM_DROPPED_ON_REMOVE
-                : LAUNCHER_ITEM_DROPPED_ON_CANCEL;
+        if (FeatureFlags.LAUNCHER3_REMOVE_DRAWER) {
+            mControlType = canDrop(item) ? ControlType.REMOVE_TARGET : ControlType.CANCEL_TARGET;
+        } else {
+            mControlType = item.id != ItemInfo.NO_ID ? ControlType.REMOVE_TARGET
+                    : ControlType.CANCEL_TARGET;
+        }
     }
 
     @Override
@@ -137,6 +149,10 @@ public class DeleteDropTarget extends ButtonDropTarget {
             };
             Snackbar.show(mLauncher, R.string.item_removed, R.string.undo,
                     modelWriter::commitDelete, onUndoClicked);
+            if (!FeatureFlags.LAUNCHER3_REMOVE_DRAWER) {
+                Snackbar.show(mLauncher, R.string.item_removed, R.string.undo,
+                        modelWriter::commitDelete, onUndoClicked);
+            }
         }
     }
 
@@ -148,9 +164,16 @@ public class DeleteDropTarget extends ButtonDropTarget {
         // Remove the item from launcher and the db, we can ignore the containerInfo in this call
         // because we already remove the drag view from the folder (if the drag originated from
         // a folder) in Folder.beginDrag()
-        mLauncher.removeItem(view, item, true /* deleteFromDb */);
-        mLauncher.getWorkspace().stripEmptyScreens();
-        mLauncher.getDragLayer()
-                .announceForAccessibility(getContext().getString(R.string.item_removed));
+        if (!FeatureFlags.LAUNCHER3_REMOVE_DRAWER || canDrop(item)) {
+            mLauncher.removeItem(view, item, true /* deleteFromDb */);
+            mLauncher.getWorkspace().stripEmptyScreens();
+            mLauncher.getDragLayer()
+                    .announceForAccessibility(getContext().getString(R.string.item_removed));
+        }
+    }
+
+    private boolean canDrop(ItemInfo itemInfo) {
+        return !(itemInfo.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION ||
+                itemInfo.itemType == LauncherSettings.Favorites.ITEM_TYPE_FOLDER);
     }
 }

@@ -389,6 +389,8 @@ public class LauncherSettings {
 
         public static final String EXTRA_DB_NAME = "db_name";
 
+        public static final String LAUNCHER3_REMOVE_DRAWER = "launcher3_remove_drawer";
+
         public static Bundle call(ContentResolver cr, String method) {
             return call(cr, method, null /* arg */);
         }

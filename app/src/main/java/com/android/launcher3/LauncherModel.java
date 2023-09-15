@@ -26,6 +26,9 @@ import android.content.Intent;
 import android.content.pm.LauncherApps;
 import android.content.pm.PackageInstaller;
 import android.content.pm.ShortcutInfo;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.UserHandle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -46,6 +49,7 @@ import com.android.launcher3.model.CacheDataUpdatedTask;
 import com.android.launcher3.model.ItemInstallQueue;
 import com.android.launcher3.model.LoaderResults;
 import com.android.launcher3.model.LoaderTask;
+import com.android.launcher3.model.LzyProvider;
 import com.android.launcher3.model.ModelDelegate;
 import com.android.launcher3.model.ModelWriter;
 import com.android.launcher3.model.PackageIncrementalDownloadUpdatedTask;
@@ -64,6 +68,7 @@ import com.android.launcher3.util.IntSet;
 import com.android.launcher3.util.ItemInfoMatcher;
 import com.android.launcher3.util.PackageUserKey;
 import com.android.launcher3.util.Preconditions;
+import com.android.launcher3.util.Thunk;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -89,6 +94,14 @@ public class LauncherModel extends LauncherApps.Callback implements InstallSessi
 
     private LoaderTask mLoaderTask;
     private boolean mIsLoaderTaskRunning;
+
+    @Thunk
+    static final HandlerThread sWorkerThread = new HandlerThread("launcher-loader");
+    private static final Looper mWorkerLooper;
+    static {
+        sWorkerThread.start();
+        mWorkerLooper = sWorkerThread.getLooper();
+    }
 
     // Indicates whether the current model data is valid or not.
     // We start off with everything not loaded. After that, we assume that
@@ -641,5 +654,12 @@ public class LauncherModel extends LauncherApps.Callback implements InstallSessi
         synchronized (mCallbacksList) {
             return mCallbacksList.toArray(new Callbacks[mCallbacksList.size()]);
         }
+    }
+
+    /**
+     * @return the looper for the worker thread which can be used to start background tasks.
+     */
+    public static Looper getWorkerLooper() {
+        return mWorkerLooper;
     }
 }

@@ -38,6 +38,7 @@ import com.android.launcher3.icons.BitmapInfo;
 import com.android.launcher3.icons.IconCache;
 import com.android.launcher3.icons.LauncherIcons;
 import com.android.launcher3.logging.FileLog;
+import com.android.launcher3.model.data.AppInfo;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.model.data.LauncherAppWidgetInfo;
 import com.android.launcher3.model.data.WorkspaceItemInfo;
@@ -176,6 +177,12 @@ public class PackageUpdatedTask extends BaseModelUpdateTask {
             default:
                 flagOp = FlagOp.NO_OP;
                 break;
+        }
+
+        // wangjing add for dynamic switch launcher layout
+        if (FeatureFlags.LAUNCHER3_REMOVE_DRAWER && (appsList.data.size() > 0)) {
+            ArrayList<AppInfo> appInfos = appsList.data;
+            app.getModel().addAndBindAddedWorkspaceItems(new LzyProvider(appInfos).get());
         }
 
         bindApplicationsIfNeeded();

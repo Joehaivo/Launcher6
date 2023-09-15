@@ -169,4 +169,7 @@
     <string name="work_apps_enable_btn_text" msgid="1156432622148413741">"开启工作应用"</string>
     <string name="developer_options_filter_hint" msgid="5896817443635989056">"过滤器"</string>
     <string name="remote_action_failed" msgid="1383965239183576790">"失败：<xliff:g id="WHAT">%1$s</xliff:g>"</string>
+    <string name="enable_flat_mode">将图标平铺到桌面</string>
+    <string name="switch_launcher_ui">切换Launcher布局</string>
+    <string name="preset_folder_name">系统工具</string>
 </resources>

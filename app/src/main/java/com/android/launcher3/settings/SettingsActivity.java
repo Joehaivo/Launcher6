@@ -23,7 +23,9 @@ import static com.android.launcher3.states.RotationHelper.ALLOW_ROTATION_PREFERE
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -40,11 +42,13 @@ import androidx.preference.PreferenceFragmentCompat.OnPreferenceStartFragmentCal
 import androidx.preference.PreferenceFragmentCompat.OnPreferenceStartScreenCallback;
 import androidx.preference.PreferenceGroup.PreferencePositionCallback;
 import androidx.preference.PreferenceScreen;
+import androidx.preference.SwitchPreference;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.InvariantDeviceProfile;
 import com.android.launcher3.LauncherFiles;
+import com.android.launcher3.LauncherSettings;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.config.FeatureFlags;
@@ -80,6 +84,8 @@ public class SettingsActivity extends FragmentActivity
     @VisibleForTesting
     static final String EXTRA_FRAGMENT_ARGS = ":settings:fragment_args";
 
+    private static final String IS_REMOVE_DRAWER = "pref_is_remove_drawer";
+    private static final String TAG = "Launcher.SettingsActivity";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -267,6 +273,29 @@ public class SettingsActivity extends FragmentActivity
                 case DEVELOPER_OPTIONS_KEY:
                     mDeveloperOptionPref = preference;
                     return updateDeveloperOption();
+                case IS_REMOVE_DRAWER:
+                    int removeDrawer = Settings.System.getInt(getContext().getContentResolver(),
+                            LauncherSettings.Settings.LAUNCHER3_REMOVE_DRAWER, 0);
+                    Log.d(TAG, "remove drawer: " + removeDrawer);
+                    SwitchPreference drawerSwitcher = (SwitchPreference)preference;
+                    drawerSwitcher.setChecked(removeDrawer == 1);
+                    drawerSwitcher.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                        @Override
+                        public boolean onPreferenceChange(Preference preference1, Object newValue) {
+                            try {
+                                boolean checked = (boolean) newValue;
+                                Settings.System.putInt(getContext().getContentResolver(),
+                                        LauncherSettings.Settings.LAUNCHER3_REMOVE_DRAWER,
+                                        checked ? 1 : 0);
+                                Log.d(TAG, "SwitchPreference checked = " + checked);
+                                drawerSwitcher.setChecked(checked);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            return false;
+                        }
+                    });
+                    return true;
             }
 
             return true;

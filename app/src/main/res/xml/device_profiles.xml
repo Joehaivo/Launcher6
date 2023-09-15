@@ -49,7 +49,7 @@
         launcher:name="4_by_4"
         launcher:numRows="4"
         launcher:numColumns="4"
-        launcher:numFolderRows="3"
+        launcher:numFolderRows="4"
         launcher:numFolderColumns="4"
         launcher:numHotseatIcons="4"
         launcher:dbFile="launcher_4_by_4.db"

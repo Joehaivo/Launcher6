@@ -293,7 +293,8 @@ public class BaseIconFactory implements AutoCloseable {
             return null;
         }
         float scale = 1f;
-
+        // 不进行额外的添加白边处理
+        shrinkNonAdaptiveIcons = false;
         if (shrinkNonAdaptiveIcons && ATLEAST_OREO) {
             if (mWrapperIcon == null) {
                 mWrapperIcon = mContext.getDrawable(R.drawable.adaptive_icon_drawable_wrapper)

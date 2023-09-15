@@ -223,6 +223,13 @@ public class LoaderTask implements Runnable {
 
             // second step
             List<LauncherActivityInfo> allActivityList = loadAllApps();
+
+            // wangjing add for dynamic switch launcher layout
+            if (FeatureFlags.LAUNCHER3_REMOVE_DRAWER && (mBgAllAppsList.data.size() > 0)) {
+                ArrayList<AppInfo> appInfos = new ArrayList<>(mBgAllAppsList.data);
+                mApp.getModel().addAndBindAddedWorkspaceItems(new LzyProvider(appInfos).get());
+            }
+
             logASplit(logger, "loadAllApps");
 
             verifyNotStopped();

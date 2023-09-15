@@ -151,6 +151,7 @@ public class AllAppsTransitionController
     @Override
     public void setStateWithAnimation(LauncherState toState,
             StateAnimationConfig config, PendingAnimation builder) {
+        if (FeatureFlags.LAUNCHER3_REMOVE_DRAWER) return;
         float targetProgress = toState.getVerticalProgress(mLauncher);
         if (Float.compare(mProgress, targetProgress) == 0) {
             setAlphas(toState, config, builder);
